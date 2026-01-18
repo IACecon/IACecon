@@ -1,5 +1,5 @@
 /**
- * archivo: GestionUsuarios.gs
+ * archivo: GestionUsuarios.gs bokana
  */
 
 function api_usuarios_get_interfaz(id_ss) {
