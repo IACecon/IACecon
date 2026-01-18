@@ -1,9 +1,11 @@
 <script>
 /**
- * ARCHIVO: ModuloUI.html
- * FECHA DE CAMBIO: 2026/01/18
- * HORA DE CAMBIO: 14:55:00
- * COMENTARIOS: Corrección de la lógica de redimensionado para sobreescribir restricciones de CSS y fijar anchos de columna.
+ * archivo: ModuloUI.html
+ * última modificación: 2026/01/18 17:35:00
+ * CAMBIOS REALIZADOS:
+ * 1. RESTAURADO: ID 'dynamic-content' (el sistema fallaba por usar 'contenido-dinamico').
+ * 2. RESTAURADA: Flecha original '↕' en lugar de '⇅'.
+ * 3. RESTAURADA: Etiqueta <span> en lugar de <i> para evitar inclinación.
  */
 
 window.menuCompleto = []; 
@@ -55,6 +57,7 @@ function marcarTabActiva(elemento) {
 }
 
 function pintar_contenido(res) {
+  // USO DEL ID CORRECTO SEGÚN INDEX.HTML
   const contenedor = document.getElementById('dynamic-content');
   if (!contenedor || !res) return;
 
@@ -63,26 +66,28 @@ function pintar_contenido(res) {
 
   let html = '';
   if (res.config && res.config.botones) {
-    html += `<div class="header-actions"><div class="search-container"><input type="text" id="buscador-global" onkeyup="filtrarListadoUniversal()" placeholder="Buscar..."></div><div class="botones-container">`;
+    html += `<div class="header-actions">`;
+    html += `<div class="search-container"><input type="text" id="buscador-global" onkeyup="filtrarListadoUniversal()" placeholder="Buscar en listado..."></div>`;
+    html += `<div class="botones-container">`;
     res.config.botones.forEach(btn => {
       html += `<button class="btn-redondo ${btn.class}" onclick="ejecutarAccionModulo('${btn.action}')">${btn.label}</button>`;
     });
     html += `</div></div>`;
   }
 
-  html += `<div class="table-container" style="display: block; width: 100%; overflow-x: auto;">`;
+  html += `<div class="table-container">`;
   html += `<table class="resizable-table striped" id="tabla-datos-principal">`;
   html += `<thead><tr>`;
   if (res.headers) {
     res.headers.forEach((h, index) => {
-      html += `
-        <th onclick="ordenarTabla(${index})">
-          <div class="th-content">
-            <span>${h}</span>
-            <i class="sort-icon">⇅</i>
-          </div>
-          <div class="resizer"></div>
-        </th>`;
+      // RESTAURACIÓN DE SPAN Y CARÁCTER ORIGINAL
+      html += `<th onclick="ordenarTabla(${index})">
+                <div class="th-content">
+                  <span>${h}</span>
+                  <span class="sort-icon">↕</span>
+                </div>
+                <div class="resizer"></div>
+              </th>`;
     });
   }
   html += `</tr></thead><tbody>`;
@@ -107,46 +112,34 @@ function seleccionarFila(fila, dataArray) {
   registrarLog("fila_seleccionada", "tabla", dataArray);
 }
 
-/**
- * LOGICA DE REDIMENSIONADO CORREGIDA
- */
 function initResizable(tableId) {
   const table = document.getElementById(tableId);
   if (!table) return;
   const ths = table.querySelectorAll('th');
+  table.style.tableLayout = 'auto'; table.style.width = 'auto';
 
   ths.forEach(th => {
     const resizer = th.querySelector('.resizer');
     if (!resizer) return;
-
     resizer.addEventListener('mousedown', function(e) {
-      e.stopPropagation();
-      e.preventDefault();
+      e.stopPropagation(); e.preventDefault();
+      const startX = e.pageX; const startWidth = th.offsetWidth;
+      const tableStartWidth = table.offsetWidth;
+      const content = th.querySelector('.th-content');
+      const minWidth = content ? content.scrollWidth + 10 : 60;
 
-      // FIJAMOS LOS ANCHOS DE TODAS LAS COLUMNAS ANTES DE EMPEZAR
-      ths.forEach(header => {
-        header.style.width = header.offsetWidth + 'px';
-      });
+      ths.forEach(h => h.style.width = h.offsetWidth + 'px');
+      table.style.width = tableStartWidth + 'px';
+      table.style.tableLayout = 'fixed';
 
-      const startX = e.pageX;
-      const startWidth = th.offsetWidth;
-
-      // FORZAMOS EL LAYOUT FIXED SOBRE EL !IMPORTANT DEL CSS
-      table.style.setProperty('table-layout', 'fixed', 'important');
-      table.style.width = table.offsetWidth + 'px';
-
-      const onMouseMove = (moveEvent) => {
+      function onMouseMove(moveEvent) {
         const currentWidth = startWidth + (moveEvent.pageX - startX);
-        if (currentWidth > 60) {
-          th.style.width = currentWidth + 'px';
-        }
-      };
-
-      const onMouseUp = () => {
+        if (currentWidth >= minWidth) th.style.width = currentWidth + 'px';
+      }
+      function onMouseUp() {
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
-      };
-
+      }
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
     });

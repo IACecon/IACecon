@@ -1,11 +1,10 @@
 <script>
 /**
- * archivo: Scripts.html 
- * última modificación: 2026/01/18 14:52:10
- * * LOG DE CAMBIOS:
- * - Se corrige initResizable: ahora detecta resizers existentes y fuerza el layout sobre el CSS !important.
- * - Se añade stopPropagation para no disparar la ordenación al redimensionar.
- * - Se mantiene la integridad del resto de funciones (logs, ordenación, carga).
+ * ARCHIVO: Scripts.html
+ * ÚLTIMA MODIFICACIÓN: 2026/01/18 17:15:00
+ * COMENTARIOS:
+ * 1. ELIMINADA: función initResizable (duplicidad con ModuloUI.html).
+ * 2. MANTENIDAS: Lógica de carga de secciones, ordenación y logs.
  */
 
 window.selectedRowData = null;
@@ -26,56 +25,6 @@ window.onload = function() {
   if (spinner) spinner.style.display = 'none';
 };
 
-/**
- * Motor de redimensionamiento profesional - CORREGIDO
- */
-function initResizable(tablaId) {
-  const table = document.getElementById(tablaId);
-  if (!table) return;
-  const headerRow = table.querySelector('thead tr');
-  const ths = headerRow ? headerRow.querySelectorAll('th') : [];
-  
-  // Forzamos el layout fixed sobre el !important de Styles.html
-  table.style.setProperty('table-layout', 'fixed', 'important');
-  table.style.setProperty('width', 'auto', 'important');
-
-  ths.forEach(th => {
-    // Si ya existe el resizer (de ModuloUI), lo usamos. Si no, lo creamos.
-    let resizer = th.querySelector('.resizer');
-    if (!resizer) {
-      resizer = document.createElement('div');
-      resizer.className = 'resizer';
-      th.appendChild(resizer);
-    }
-
-    resizer.addEventListener('mousedown', function(e) {
-      e.preventDefault();
-      e.stopPropagation(); // Evita que el clic llegue al TH y ordene la tabla
-      
-      console.log("Redimensionando columna: " + th.innerText); // Para verificar en tu Chromebook
-      
-      const startX = e.pageX;
-      const startWidth = th.offsetWidth;
-
-      const onMouseMove = (e) => {
-        const newWidth = startWidth + (e.pageX - startX);
-        if (newWidth > 50) { 
-          th.style.setProperty('width', newWidth + 'px', 'important');
-          th.style.setProperty('min-width', newWidth + 'px', 'important');
-        }
-      };
-
-      const onMouseUp = () => {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      };
-
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    });
-  });
-}
-
 function cargarSeccion(nombre) {
   const spinner = document.getElementById('loading-spinner');
   if (spinner) spinner.style.display = 'block';
@@ -91,43 +40,41 @@ function cargarSeccion(nombre) {
     .get_data_tabla_generica(nombre);
 }
 
-function ordenarTabla(n) {
-  const tabla = document.getElementById("tabla-datos-principal");
-  if (!tabla) return;
-  let filas, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-  switching = true;
-  dir = "asc"; 
-  while (switching) {
-    switching = false;
-    filas = tabla.rows;
-    for (i = 1; i < (filas.length - 1); i++) {
-      shouldSwitch = false;
-      x = filas[i].getElementsByTagName("TD")[n];
-      y = filas[i + 1].getElementsByTagName("TD")[n];
-      if (dir == "asc") {
-        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-      } else if (dir == "desc") {
-        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-      }
-    }
-    if (shouldSwitch) {
-      filas[i].parentNode.insertBefore(filas[i + 1], filas[i]);
-      switching = true;
-      switchcount ++;      
-    } else {
-      if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
-    }
-  }
-}
-
 function registrarLog(evento, pestana, valores) {
   const logCont = document.getElementById('debug-log');
   if (!logCont) return;
   const ahora = new Date();
   const f = ahora.getFullYear() + '/' + String(ahora.getMonth() + 1).padStart(2, '0') + '/' + String(ahora.getDate()).padStart(2, '0') + ' ' + String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0') + ':' + String(ahora.getSeconds()).padStart(2, '0');
+  
   const logItem = document.createElement('div');
-  logItem.innerHTML = `[${f}] [url: ${window.location.href}] [tab: ${pestana}] [acc: ${evento}] data: ${JSON.stringify(valores)}`;
+  logItem.style.borderBottom = "1px solid #444";
+  logItem.style.padding = "2px 0";
+  logItem.innerHTML = `[${f}] [tab: ${pestana}] [acc: ${evento}] data: ${JSON.stringify(valores)}`;
   logCont.prepend(logItem);
+}
+
+function limpiarLog() {
+  const logCont = document.getElementById('debug-log');
+  if (logCont) logCont.innerHTML = '';
+}
+
+function ordenarTabla(n) {
+  const tabla = document.getElementById("tabla-datos-principal");
+  if (!tabla) return;
+  let filas, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+  switching = true; dir = "asc"; 
+  while (switching) {
+    switching = false; filas = tabla.rows;
+    for (i = 1; i < (filas.length - 1); i++) {
+      shouldSwitch = false;
+      x = filas[i].getElementsByTagName("TD")[n];
+      y = filas[i + 1].getElementsByTagName("TD")[n];
+      if (dir == "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
+      if (dir == "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
+    }
+    if (shouldSwitch) { filas[i].parentNode.insertBefore(filas[i + 1], filas[i]); switching = true; switchcount ++; }
+    else if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
+  }
 }
 
 function ejecutarAccionModulo(accionRaw) {

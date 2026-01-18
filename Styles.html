@@ -1,12 +1,13 @@
 <style>
-/*
+/**
  * ARCHIVO: Styles.html
- * FECHA DE CAMBIO: 2026/01/18
- * HORA DE CAMBIO: 14:41:42
- * COMENTARIOS SOBRE LOS CAMBIOS:
- * 1. Mantenimiento del protocolo de control de versiones.
- * 2. CABECERAS: Se elimina negrita y se iguala el tamaño de fuente al sidebar (14px).
- * 3. FLECHAS: Se reduce el tamaño de .sort-icon a 10px.
+ * ÚLTIMA MODIFICACIÓN: 2026/01/18 17:36:10
+ * CAMBIOS:
+ * 1. Centrado de título en el menú lateral (.sidenav-header).
+ * 2. Buscador con zona blanca y bordes visibles.
+ * 3. Registro (log) con fondo negro puro y texto blanco.
+ * 4. Flexibilidad en la tabla para permitir el redimensionado por JS.
+ * 5. SEPARACIÓN DE BOTONES: Añadido margen izquierdo a .btn-redondo.
  */
   :root { 
     --color-principal: <?= colorCorporativo ?>; 
@@ -15,78 +16,89 @@
     --color-seleccion: #7ca39e; 
   }
   
-  /* Scroll Verde */
   .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
   .table-container::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
   .table-container::-webkit-scrollbar-thumb { background: var(--color-seleccion); border-radius: 4px; }
-  .table-container::-webkit-scrollbar-thumb:hover { background: #5e7d79; }
 
-  body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f5f5f5; font-family: 'Roboto', sans-serif; margin: 0 !important; padding: 0 !important; }
+  body { display: flex; min-height: 100vh; flex-direction: column; background-color: #f5f5f5; font-family: 'Roboto', sans-serif; margin: 0 !important; }
   .user-header { position: absolute; top: 15px; right: 20px; color: var(--color-principal); font-size: 13px; z-index: 1000; }
+  
+  /* Sidebar y Título Centrado */
   .sidenav.sidenav-fixed { width: 240px; border: none; background-color: var(--color-principal); left: 0; }
-  .sidenav li a { color: white !important; cursor: pointer; font-size: 14px; display: block; padding: 0 32px; height: 48px; line-height: 48px; }
+  .sidenav li a { color: white !important; font-size: 14px; display: block; padding: 0 32px; height: 48px; line-height: 48px; }
   .sidenav li a.active-menu { background-color: rgba(0, 0, 0, 0.2) !important; font-weight: 700; }
-  .sidenav-header { color: white; padding: 10px; text-align: center; }
+  .sidenav-header { 
+    color: white; 
+    padding: 30px 10px; 
+    text-align: center; 
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+  }
+  .sidenav-header h5 { margin: 0; font-weight: 300; font-size: 1.5rem; }
+
   main { flex: 1 0 auto; margin-left: 240px; padding: 20px; width: calc(100% - 240px); box-sizing: border-box; }
   @media only screen and (max-width : 992px) { main { margin-left: 0; width: 100%; } }
   
-  /* Botones y Tabs */
-  .tabs-wrapper { margin: 0; padding: 0; }
-  .tabs { background-color: transparent !important; border-bottom: 1px solid #ddd !important; height: 35px !important; }
-  .tabs .tab a { color: var(--color-principal) !important; text-transform: none !important; font-size: 13px; }
-  .tabs .tab a.active { background-color: var(--color-principal) !important; color: white !important; }
-  .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-  .search-container { width: 35%; }
-  .search-container input { background-color: white !important; border: 1px solid #ddd !important; border-radius: 4px !important; padding: 0 10px !important; height: 2.5rem !important; }
-  .btn-redondo { border-radius: 8px !important; text-transform: none !important; padding: 0 18px !important; height: 34px; line-height: 34px; color: white !important; cursor: pointer; font-size: 13px; margin-left: 10px; border: none !important; }
+  /* Buscador (Zona Blanca) y Botones */
+  .header-actions { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+  .search-container { width: 40%; }
+  .search-container input { 
+    background-color: white !important; 
+    border: 1px solid #ccc !important; 
+    border-radius: 4px !important; 
+    padding: 0 10px !important; 
+    height: 2.5rem !important; 
+    box-shadow: none !important;
+  }
+  
+  /* Botones con separación de 12px */
+  .btn-redondo { 
+    border-radius: 8px !important; 
+    text-transform: none !important; 
+    padding: 0 18px !important; 
+    height: 34px; 
+    color: white !important; 
+    cursor: pointer; 
+    border: none !important; 
+    margin-left: 12px !important; 
+  }
+  
   .btn-alta { background-color: var(--color-principal) !important; }
   .btn-baja { background-color: var(--color-baja) !important; }
   .btn-mod { background-color: var(--color-mod) !important; }
 
-  /* Tabla y Scroll */
-  .table-container { width: 100%; overflow-x: auto !important; background: white; border: 1px solid #ddd; border-radius: 4px; display: block; }
+  /* Tablas y Redimensionado */
+  .table-container { width: 100%; overflow-x: auto; background: white; border: 1px solid #ddd; border-radius: 4px; }
   table.resizable-table { 
     border-collapse: collapse; 
-    table-layout: auto !important; 
-    width: auto !important; 
+    table-layout: auto; 
+    width: auto; 
     min-width: 100%; 
   }
-
   table.striped thead tr th { 
     background-color: var(--color-principal) !important; 
     color: white !important; 
     padding: 8px 10px !important; 
     position: relative; 
     font-size: 14px; 
-    border-right: 1px solid rgba(255,255,255,0.2);
-    box-sizing: border-box;
     font-weight: normal !important;
     text-align: center !important;
     white-space: nowrap;
+    border-right: 1px solid rgba(255,255,255,0.2);
   }
-
-  .th-content { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; pointer-events: none; }
-  .th-content span { pointer-events: auto; }
-  .sort-icon { position: absolute; right: 0; font-style: normal; color: white !important; pointer-events: auto; font-size: 10px; }
-  
-  /* Tirador de redimensionado */
-  .resizer { 
-    position: absolute; 
-    right: 0; 
-    top: 0; 
-    height: 100%; 
-    width: 8px; 
-    cursor: col-resize; 
-    z-index: 100; 
-  }
-  .resizer:hover { border-right: 2px solid rgba(255,255,255,0.5); }
-
-  tbody tr:hover { background-color: #f0f0f0; }
+  .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 8px; cursor: col-resize; z-index: 100; }
   tbody tr.selected-row { background-color: var(--color-seleccion) !important; color: white !important; }
-  
-  table.striped tbody tr td { 
-    font-size: 13px; padding: 10px; border-bottom: 1px solid #eee; 
-    overflow: hidden; text-overflow: ellipsis; white-space: nowrap; 
+  table.striped tbody tr td { font-size: 13px; padding: 10px; border-bottom: 1px solid #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+  /* Registro de sistema (Log) */
+  #log-container { 
+    background: #000000; 
+    color: #ffffff; 
+    padding: 15px; 
+    border-radius: 8px; 
+    font-family: monospace; 
+    font-size: 12px; 
+    margin-top: 30px; 
+    border: 1px solid #333;
   }
-  #log-container { background: #272822; color: #f8f8f2; padding: 15px; border-radius: 8px; font-family: 'Courier New', monospace; font-size: 12px; }
+  #debug-log { max-height: 150px; overflow-y: auto; }
 </style>
