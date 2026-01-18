@@ -1,11 +1,10 @@
 <script>
 /**
- * archivo: ModuloUI.html bokana
- * última modificación: 2026/01/18 17:35:00
+ * archivo: ModuloUI.html
+ * última modificación: 2026/01/18 19:42:15
  * CAMBIOS REALIZADOS:
- * 1. RESTAURADO: ID 'dynamic-content' (el sistema fallaba por usar 'contenido-dinamico').
- * 2. RESTAURADA: Flecha original '↕' en lugar de '⇅'.
- * 3. RESTAURADA: Etiqueta <span> en lugar de <i> para evitar inclinación.
+ * 1. SOLUCIÓN DEFINITIVA SELECCIÓN: Se usa base64 para inyectar el JSON en la línea 79 y evitar errores de comillas.
+ * 2. TOGGLE FUNCIONAL: La función seleccionarFila permite activar y desactivar correctamente.
  */
 
 window.menuCompleto = []; 
@@ -57,7 +56,6 @@ function marcarTabActiva(elemento) {
 }
 
 function pintar_contenido(res) {
-  // USO DEL ID CORRECTO SEGÚN INDEX.HTML
   const contenedor = document.getElementById('dynamic-content');
   if (!contenedor || !res) return;
 
@@ -80,7 +78,6 @@ function pintar_contenido(res) {
   html += `<thead><tr>`;
   if (res.headers) {
     res.headers.forEach((h, index) => {
-      // RESTAURACIÓN DE SPAN Y CARÁCTER ORIGINAL
       html += `<th onclick="ordenarTabla(${index})">
                 <div class="th-content">
                   <span>${h}</span>
@@ -93,7 +90,9 @@ function pintar_contenido(res) {
   html += `</tr></thead><tbody>`;
   if (res.rows) {
     res.rows.forEach(row => {
-      html += `<tr onclick="seleccionarFila(this, ${JSON.stringify(row)})">`;
+      // Usamos btoa para evitar cualquier problema de comillas en el onclick
+      const dataEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(row))));
+      html += `<tr onclick="seleccionarFila(this, '${dataEncoded}')">`;
       row.forEach(cell => { html += `<td>${cell || ''}</td>`; });
       html += `</tr>`;
     });
@@ -104,12 +103,22 @@ function pintar_contenido(res) {
   setTimeout(() => { if (typeof initResizable === 'function') initResizable('tabla-datos-principal'); }, 300);
 }
 
-function seleccionarFila(fila, dataArray) {
+function seleccionarFila(fila, dataEncoded) {
+  const dataArray = JSON.parse(decodeURIComponent(escape(atob(dataEncoded))));
+  const estabaSeleccionada = fila.classList.contains('selected-row');
+  
+  // Limpiar todas
   const trs = fila.parentNode.querySelectorAll('tr');
   trs.forEach(tr => tr.classList.remove('selected-row'));
-  fila.classList.add('selected-row');
-  window.selectedRowData = dataArray;
-  registrarLog("fila_seleccionada", "tabla", dataArray);
+  
+  if (!estabaSeleccionada) {
+    fila.classList.add('selected-row');
+    window.selectedRowData = dataArray;
+    registrarLog("fila_seleccionada", "tabla", dataArray);
+  } else {
+    window.selectedRowData = null;
+    registrarLog("fila_deseleccionada", "tabla", null);
+  }
 }
 
 function initResizable(tableId) {

@@ -1,19 +1,20 @@
 <style>
 /**
  * ARCHIVO: Styles.html
- * ÚLTIMA MODIFICACIÓN: 2026/01/18 17:36:10
+ * ÚLTIMA MODIFICACIÓN: 2026/01/18 19:33:12
  * CAMBIOS:
  * 1. Centrado de título en el menú lateral (.sidenav-header).
  * 2. Buscador con zona blanca y bordes visibles.
  * 3. Registro (log) con fondo negro puro y texto blanco.
  * 4. Flexibilidad en la tabla para permitir el redimensionado por JS.
  * 5. SEPARACIÓN DE BOTONES: Añadido margen izquierdo a .btn-redondo.
+ * 6. SELECCIÓN VISIBLE: Color azul índigo y aumento de especificidad en línea 88.
  */
   :root { 
     --color-principal: <?= colorCorporativo ?>; 
     --color-baja: #d46b6b;
     --color-mod: #e09b3d;
-    --color-seleccion: #7ca39e; 
+    --color-seleccion: <?= colorCorporativo ?>; 
   }
   
   .table-container::-webkit-scrollbar { height: 8px; width: 8px; }
@@ -86,7 +87,7 @@
     border-right: 1px solid rgba(255,255,255,0.2);
   }
   .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 8px; cursor: col-resize; z-index: 100; }
-  tbody tr.selected-row { background-color: var(--color-seleccion) !important; color: white !important; }
+  table.striped tbody tr.selected-row, table.striped tbody tr.selected-row td { background-color: var(--color-seleccion) !important; color: white !important; }
   table.striped tbody tr td { font-size: 13px; padding: 10px; border-bottom: 1px solid #eee; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
   /* Registro de sistema (Log) */
