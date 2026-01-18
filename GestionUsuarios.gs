@@ -27,9 +27,9 @@ function api_usuarios_get_interfaz(id_ss) {
       config: {
         buscador: true,
         botones: [
-          { label: "alta", class: "btn-alta", action: "ejecutar_accion_GestionUsuarios('alta')" },
-          { label: "baja", class: "btn-baja", action: "ejecutar_accion_GestionUsuarios('baja')" },
-          { label: "modificar", class: "btn-mod", action: "ejecutar_accion_GestionUsuarios('modificar')" }
+          { label: "Alta", class: "btn-alta", action: "ejecutar_accion_GestionUsuarios('alta')" },
+          { label: "Baja", class: "btn-baja", action: "ejecutar_accion_GestionUsuarios('baja')" },
+          { label: "Modificar", class: "btn-mod", action: "ejecutar_accion_GestionUsuarios('modificar')" }
         ]
       }
     };
