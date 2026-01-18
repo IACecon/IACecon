@@ -1,0 +1,142 @@
+<script>
+/**
+ * archivo: Scripts.html
+ * última modificación: 2026/01/18 10:10:45
+ * * LOG DE CAMBIOS:
+ * - Se reescribe por completo initResizable: ahora usa el evento nativo y ajusta el layout de la tabla.
+ * - Se restaura la lógica de logs y carga sin cambios estéticos.
+ */
+
+window.selectedRowData = null;
+window.currentData = { archivo_id: "", modulo: "" };
+
+window.onload = function() {
+  google.script.run
+    .withSuccessHandler(res => {
+      if(res) {
+        document.getElementById('user-name').innerText = res.nombre || "";
+        document.getElementById('user-role').innerText = res.rol || "";
+        registrarLog("identidad_cargada", "index", res);
+        if (typeof pintar_menu_principal === 'function') pintar_menu_principal(res.menu);
+      }
+    })
+    .get_user_data();
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'none';
+};
+
+/**
+ * Motor de redimensionamiento profesional
+ */
+function initResizable(tablaId) {
+  const table = document.getElementById(tablaId);
+  if (!table) return;
+  const headerRow = table.querySelector('thead tr');
+  const ths = headerRow ? headerRow.querySelectorAll('th') : [];
+  
+  table.style.tableLayout = 'fixed';
+  table.style.width = '100%';
+
+  ths.forEach(th => {
+    if (th.querySelector('.resizer')) return;
+    const resizer = document.createElement('div');
+    resizer.className = 'resizer';
+    th.appendChild(resizer);
+
+    resizer.addEventListener('mousedown', function(e) {
+      const startX = e.pageX;
+      const startWidth = th.offsetWidth;
+
+      const onMouseMove = (e) => {
+        const newWidth = startWidth + (e.pageX - startX);
+        if (newWidth > 50) { // Límite mínimo
+          th.style.width = newWidth + 'px';
+        }
+      };
+
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+      e.preventDefault();
+    });
+  });
+}
+
+function cargarSeccion(nombre) {
+  const spinner = document.getElementById('loading-spinner');
+  if (spinner) spinner.style.display = 'block';
+  google.script.run
+    .withSuccessHandler(res => {
+      if (spinner) spinner.style.display = 'none';
+      if (!res) return;
+      window.currentData.archivo_id = res.archivo_id || "";
+      window.currentData.modulo = res.modulo || "";
+      registrarLog("datos_recibidos", nombre, res);
+      if (typeof pintar_contenido === 'function') pintar_contenido(res);
+    })
+    .get_data_tabla_generica(nombre);
+}
+
+function ordenarTabla(n) {
+  const tabla = document.getElementById("tabla-datos-principal");
+  if (!tabla) return;
+  let filas, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
+  switching = true;
+  dir = "asc"; 
+  while (switching) {
+    switching = false;
+    filas = tabla.rows;
+    for (i = 1; i < (filas.length - 1); i++) {
+      shouldSwitch = false;
+      x = filas[i].getElementsByTagName("TD")[n];
+      y = filas[i + 1].getElementsByTagName("TD")[n];
+      if (dir == "asc") {
+        if (x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
+      } else if (dir == "desc") {
+        if (x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
+      }
+    }
+    if (shouldSwitch) {
+      filas[i].parentNode.insertBefore(filas[i + 1], filas[i]);
+      switching = true;
+      switchcount ++;      
+    } else {
+      if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
+    }
+  }
+}
+
+function registrarLog(evento, pestana, valores) {
+  const logCont = document.getElementById('debug-log');
+  if (!logCont) return;
+  const ahora = new Date();
+  const f = ahora.getFullYear() + '/' + String(ahora.getMonth() + 1).padStart(2, '0') + '/' + String(ahora.getDate()).padStart(2, '0') + ' ' + String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0') + ':' + String(ahora.getSeconds()).padStart(2, '0');
+  const logItem = document.createElement('div');
+  logItem.innerHTML = `[${f}] [url: ${window.location.href}] [tab: ${pestana}] [acc: ${evento}] data: ${JSON.stringify(valores)}`;
+  logCont.prepend(logItem);
+}
+
+function ejecutarAccionModulo(accionRaw) {
+  try {
+    const partes = accionRaw.split('(');
+    const nombreFunc = partes[0].trim();
+    const param = partes[1] ? partes[1].split("'")[1] : null;
+    if (typeof window[nombreFunc] === 'function') window[nombreFunc](param);
+  } catch (e) { registrarLog("error_ejecucion", "js", e.message); }
+}
+
+function filtrarListadoUniversal() {
+  const input = document.getElementById('buscador-global');
+  const tabla = document.getElementById('tabla-datos-principal');
+  if (!input || !tabla) return;
+  const filter = input.value.toLowerCase();
+  const filas = tabla.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+  for (let i = 0; i < filas.length; i++) {
+    filas[i].style.display = filas[i].innerText.toLowerCase().includes(filter) ? "" : "none";
+  }
+}
+</script>

@@ -1,0 +1,109 @@
+<script>
+/**
+ * ARCHIVO: ModuloUI.html
+ * FECHA DE CAMBIO: 2026/01/18
+ * HORA DE CAMBIO: 16:45:12
+ * COMENTARIOS: Corrección estética de iconos de ordenación y mantenimiento de scroll.
+ */
+
+window.menuCompleto = []; 
+
+function pintar_menu_principal(menu) {
+  const menuCont = document.getElementById('main-menu-container');
+  if (!menuCont || !menu) return;
+  window.menuCompleto = menu; 
+  let htmlMenu = '';
+  menu.forEach((item, index) => {
+    htmlMenu += `<li><a href="#!" class="sidebar-link" id="side-${index}" onclick="seleccionarSidebar(this, '${item.titulo}')">${item.titulo}</a></li>`;
+  });
+  menuCont.innerHTML = htmlMenu;
+  const primerEnlace = document.getElementById('side-0');
+  if (primerEnlace) seleccionarSidebar(primerEnlace, menu[0].titulo);
+}
+
+function seleccionarSidebar(elemento, titulo) {
+  document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active-menu'));
+  elemento.classList.add('active-menu');
+  const info = window.menuCompleto.find(m => m.titulo === titulo);
+  if (info) {
+    if (info.pestanas && info.pestanas.length > 0) {
+      pintar_tabs(info.pestanas);
+      cargarSeccion(info.pestanas[0]);
+    } else {
+      const tabCont = document.getElementById('sub-menu-tabs');
+      if (tabCont) tabCont.innerHTML = '';
+      cargarSeccion(titulo);
+    }
+  }
+}
+
+function pintar_tabs(lista, tabActiva) {
+  const tabCont = document.getElementById('sub-menu-tabs');
+  if (!tabCont) return;
+  let htmlTabs = '';
+  lista.forEach((p, index) => {
+    const clase = (tabActiva && p === tabActiva) || (!tabActiva && index === 0) ? 'active' : '';
+    htmlTabs += `<li class="tab"><a class="${clase}" onclick="marcarTabActiva(this); cargarSeccion('${p}')">${p}</a></li>`;
+  });
+  tabCont.innerHTML = htmlTabs;
+  if (typeof M !== 'undefined') M.Tabs.init(tabCont);
+}
+
+function marcarTabActiva(elemento) {
+  elemento.closest('.tabs').querySelectorAll('a').forEach(a => a.classList.remove('active'));
+  elemento.classList.add('active');
+}
+
+function pintar_contenido(res) {
+  const contenedor = document.getElementById('dynamic-content');
+  if (!contenedor || !res) return;
+
+  window.currentData.archivo_id = res.archivo_id || "";
+  window.currentData.modulo = res.modulo || "";
+
+  let html = '';
+  if (res.config && res.config.botones) {
+    html += `<div class="header-actions"><div class="search-container"><input type="text" id="buscador-global" onkeyup="filtrarListadoUniversal()" placeholder="Buscar..."></div><div class="botones-container">`;
+    res.config.botones.forEach(btn => {
+      html += `<button class="btn-redondo ${btn.class}" onclick="ejecutarAccionModulo('${btn.action}')">${btn.label}</button>`;
+    });
+    html += `</div></div>`;
+  }
+
+  html += `<div class="table-container" style="display: block; width: 100%; overflow-x: auto;">`;
+  html += `<table class="resizable-table striped" id="tabla-datos-principal">`;
+  html += `<thead><tr>`;
+  if (res.headers) {
+    res.headers.forEach((h, index) => {
+      html += `
+        <th onclick="ordenarTabla(${index})">
+          <div class="th-content">
+            <span>${h}</span>
+            <i class="sort-icon" style="font-style: normal;">⇅</i>
+          </div>
+          <div class="resizer"></div>
+        </th>`;
+    });
+  }
+  html += `</tr></thead><tbody>`;
+  if (res.rows) {
+    res.rows.forEach(row => {
+      html += `<tr onclick="seleccionarFila(this, ${JSON.stringify(row)})">`;
+      row.forEach(cell => { html += `<td>${cell || ''}</td>`; });
+      html += `</tr>`;
+    });
+  }
+  html += `</tbody></table></div>`;
+  contenedor.innerHTML = html;
+
+  setTimeout(() => { if (typeof initResizable === 'function') initResizable('tabla-datos-principal'); }, 300);
+}
+
+function seleccionarFila(fila, dataArray) {
+  const trs = fila.parentNode.querySelectorAll('tr');
+  trs.forEach(tr => tr.classList.remove('selected-row'));
+  fila.classList.add('selected-row');
+  window.selectedRowData = dataArray;
+  registrarLog("fila_seleccionada", "tabla", dataArray);
+}
+</script>
