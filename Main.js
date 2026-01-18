@@ -1,5 +1,5 @@
 /**
- * archivo: Main.gs
+ * archivo: Main.gs bokana
  */
 var id_ss_parametros = '1V2G1x_64aLUcM4M4hSTBSwI7yFNKQS4vGecLWvv_jDY';
 var id_ss_usuarios = '1Eq6fvd6DXOWyp4apY8uMscSmVd-e_PsljnZKQyqArDE';
