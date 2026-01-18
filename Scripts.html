@@ -1,11 +1,11 @@
 <script>
 /**
  * archivo: Scripts.html 
- * última modificación: 2026/01/18 10:10:45
+ * última modificación: 2026/01/18 14:52:10
  * * LOG DE CAMBIOS:
- * Prueba sincro con Git
- * - Se reescribe por completo initResizable: ahora usa el evento nativo y ajusta el layout de la tabla.
- * - Se restaura la lógica de logs y carga sin cambios estéticos.
+ * - Se corrige initResizable: ahora detecta resizers existentes y fuerza el layout sobre el CSS !important.
+ * - Se añade stopPropagation para no disparar la ordenación al redimensionar.
+ * - Se mantiene la integridad del resto de funciones (logs, ordenación, carga).
  */
 
 window.selectedRowData = null;
@@ -27,7 +27,7 @@ window.onload = function() {
 };
 
 /**
- * Motor de redimensionamiento profesional
+ * Motor de redimensionamiento profesional - CORREGIDO
  */
 function initResizable(tablaId) {
   const table = document.getElementById(tablaId);
@@ -35,23 +35,33 @@ function initResizable(tablaId) {
   const headerRow = table.querySelector('thead tr');
   const ths = headerRow ? headerRow.querySelectorAll('th') : [];
   
-  table.style.tableLayout = 'fixed';
-  table.style.width = '100%';
+  // Forzamos el layout fixed sobre el !important de Styles.html
+  table.style.setProperty('table-layout', 'fixed', 'important');
+  table.style.setProperty('width', 'auto', 'important');
 
   ths.forEach(th => {
-    if (th.querySelector('.resizer')) return;
-    const resizer = document.createElement('div');
-    resizer.className = 'resizer';
-    th.appendChild(resizer);
+    // Si ya existe el resizer (de ModuloUI), lo usamos. Si no, lo creamos.
+    let resizer = th.querySelector('.resizer');
+    if (!resizer) {
+      resizer = document.createElement('div');
+      resizer.className = 'resizer';
+      th.appendChild(resizer);
+    }
 
     resizer.addEventListener('mousedown', function(e) {
+      e.preventDefault();
+      e.stopPropagation(); // Evita que el clic llegue al TH y ordene la tabla
+      
+      console.log("Redimensionando columna: " + th.innerText); // Para verificar en tu Chromebook
+      
       const startX = e.pageX;
       const startWidth = th.offsetWidth;
 
       const onMouseMove = (e) => {
         const newWidth = startWidth + (e.pageX - startX);
-        if (newWidth > 50) { // Límite mínimo
-          th.style.width = newWidth + 'px';
+        if (newWidth > 50) { 
+          th.style.setProperty('width', newWidth + 'px', 'important');
+          th.style.setProperty('min-width', newWidth + 'px', 'important');
         }
       };
 
@@ -62,7 +72,6 @@ function initResizable(tablaId) {
 
       document.addEventListener('mousemove', onMouseMove);
       document.addEventListener('mouseup', onMouseUp);
-      e.preventDefault();
     });
   });
 }

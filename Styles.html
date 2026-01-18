@@ -2,12 +2,11 @@
 /*
  * ARCHIVO: Styles.html
  * FECHA DE CAMBIO: 2026/01/18
- * HORA DE CAMBIO: 18:15:30
+ * HORA DE CAMBIO: 14:41:42
  * COMENTARIOS SOBRE LOS CAMBIOS:
  * 1. Mantenimiento del protocolo de control de versiones.
- * 2. EFICACIA SCROLL + RESIZE: Se cambia 'width: 100%' por 'width: auto' y 'min-width: 100%' en la tabla. Esto permite que la tabla ocupe todo el ancho pero crezca si el redimensionado lo exige, activando el scroll.
- * 3. INTEGRIDAD TOTAL: Recuperación de todos los estilos de botones (.btn-redondo), pestañas (.tabs) y buscador para evitar fallos de interfaz.
- * 4. ESTÉTICA: Se mantiene el scrollbar verde corporativo (#7ca39e).
+ * 2. CABECERAS: Se elimina negrita y se iguala el tamaño de fuente al sidebar (14px).
+ * 3. FLECHAS: Se reduce el tamaño de .sort-icon a 10px.
  */
   :root { 
     --color-principal: <?= colorCorporativo ?>; 
@@ -45,34 +44,43 @@
   .btn-mod { background-color: var(--color-mod) !important; }
 
   /* Tabla y Scroll */
-  .table-container { 
-    width: 100%; 
-    overflow-x: auto !important; 
-    background: white; 
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    display: block;
-  }
-  
+  .table-container { width: 100%; overflow-x: auto !important; background: white; border: 1px solid #ddd; border-radius: 4px; display: block; }
   table.resizable-table { 
     border-collapse: collapse; 
-    table-layout: fixed; 
-    /* LA CLAVE: min-width 100% para que cubra el fondo, width auto para que crezca al redimensionar */
-    width: auto !important;
-    min-width: 100%;
+    table-layout: auto !important; 
+    width: auto !important; 
+    min-width: 100%; 
   }
 
   table.striped thead tr th { 
     background-color: var(--color-principal) !important; 
     color: white !important; 
-    padding: 6px 10px !important; 
+    padding: 8px 10px !important; 
     position: relative; 
-    font-size: 13px; 
+    font-size: 14px; 
     border-right: 1px solid rgba(255,255,255,0.2);
     box-sizing: border-box;
+    font-weight: normal !important;
+    text-align: center !important;
+    white-space: nowrap;
   }
+
+  .th-content { display: flex; align-items: center; justify-content: center; position: relative; width: 100%; pointer-events: none; }
+  .th-content span { pointer-events: auto; }
+  .sort-icon { position: absolute; right: 0; font-style: normal; color: white !important; pointer-events: auto; font-size: 10px; }
   
-  .resizer { position: absolute; right: 0; top: 0; height: 100%; width: 5px; cursor: col-resize; z-index: 10; }
+  /* Tirador de redimensionado */
+  .resizer { 
+    position: absolute; 
+    right: 0; 
+    top: 0; 
+    height: 100%; 
+    width: 8px; 
+    cursor: col-resize; 
+    z-index: 100; 
+  }
+  .resizer:hover { border-right: 2px solid rgba(255,255,255,0.5); }
+
   tbody tr:hover { background-color: #f0f0f0; }
   tbody tr.selected-row { background-color: var(--color-seleccion) !important; color: white !important; }
   

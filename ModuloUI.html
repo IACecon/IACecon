@@ -2,8 +2,8 @@
 /**
  * ARCHIVO: ModuloUI.html
  * FECHA DE CAMBIO: 2026/01/18
- * HORA DE CAMBIO: 16:45:12
- * COMENTARIOS: Corrección estética de iconos de ordenación y mantenimiento de scroll.
+ * HORA DE CAMBIO: 14:55:00
+ * COMENTARIOS: Corrección de la lógica de redimensionado para sobreescribir restricciones de CSS y fijar anchos de columna.
  */
 
 window.menuCompleto = []; 
@@ -79,7 +79,7 @@ function pintar_contenido(res) {
         <th onclick="ordenarTabla(${index})">
           <div class="th-content">
             <span>${h}</span>
-            <i class="sort-icon" style="font-style: normal;">⇅</i>
+            <i class="sort-icon">⇅</i>
           </div>
           <div class="resizer"></div>
         </th>`;
@@ -105,5 +105,51 @@ function seleccionarFila(fila, dataArray) {
   fila.classList.add('selected-row');
   window.selectedRowData = dataArray;
   registrarLog("fila_seleccionada", "tabla", dataArray);
+}
+
+/**
+ * LOGICA DE REDIMENSIONADO CORREGIDA
+ */
+function initResizable(tableId) {
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const ths = table.querySelectorAll('th');
+
+  ths.forEach(th => {
+    const resizer = th.querySelector('.resizer');
+    if (!resizer) return;
+
+    resizer.addEventListener('mousedown', function(e) {
+      e.stopPropagation();
+      e.preventDefault();
+
+      // FIJAMOS LOS ANCHOS DE TODAS LAS COLUMNAS ANTES DE EMPEZAR
+      ths.forEach(header => {
+        header.style.width = header.offsetWidth + 'px';
+      });
+
+      const startX = e.pageX;
+      const startWidth = th.offsetWidth;
+
+      // FORZAMOS EL LAYOUT FIXED SOBRE EL !IMPORTANT DEL CSS
+      table.style.setProperty('table-layout', 'fixed', 'important');
+      table.style.width = table.offsetWidth + 'px';
+
+      const onMouseMove = (moveEvent) => {
+        const currentWidth = startWidth + (moveEvent.pageX - startX);
+        if (currentWidth > 60) {
+          th.style.width = currentWidth + 'px';
+        }
+      };
+
+      const onMouseUp = () => {
+        document.removeEventListener('mousemove', onMouseMove);
+        document.removeEventListener('mouseup', onMouseUp);
+      };
+
+      document.addEventListener('mousemove', onMouseMove);
+      document.addEventListener('mouseup', onMouseUp);
+    });
+  });
 }
 </script>
