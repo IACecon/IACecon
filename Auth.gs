@@ -1,12 +1,15 @@
 /**
- * archivo: Auth.gs lolo
- * Versión v14 - Sincronización de Identidad y Menú
- * Fecha: 2026/01/25 23:25:00
+ * archivo: Auth.gs
+ * Versión: Parametrización fiel al repositorio
  */
 
 function get_validated_user_logic() {
   try {
     var emailSession = Session.getActiveUser().getEmail().toLowerCase().trim();
+    var params = get_system_params();
+    var urlUsuarios = params["Usuarios"];
+    var id_ss_usuarios = urlUsuarios.match(/[-\w]{25,}/)[0];
+
     var ss = SpreadsheetApp.openById(id_ss_usuarios);
     var hoja = ss.getSheetByName('Usuarios');
     var values = hoja.getDataRange().getValues();
@@ -36,17 +39,16 @@ function get_validated_user_logic() {
 function get_dynamic_menu_logic() {
   var menu_items = [];
   var html_files = [];
-  
+
   try {
     var user = get_validated_user_logic();
     var rol_usuario = user.rol; 
     
-    var ss = SpreadsheetApp.openById(id_ss_parametros);
+    var ss = SpreadsheetApp.openById(ID_SS_PARAMETROS);
     var hoja = ss.getSheetByName('Funcionalidades');
     var values = hoja.getDataRange().getValues();
     var headers = values[0].map(function(h) { return h.toString().toLowerCase().trim(); });
 
-    // Índices de respaldo si falla el indexOf
     var c_sb   = headers.indexOf("sidebar") !== -1 ? headers.indexOf("sidebar") : 0;
     var c_ps   = (headers.indexOf("pestaña") !== -1) ? headers.indexOf("pestaña") : (headers.indexOf("pestana") !== -1 ? headers.indexOf("pestana") : 1);
     var c_r1   = headers.indexOf("rol1") !== -1 ? headers.indexOf("rol1") : 2;
@@ -57,7 +59,7 @@ function get_dynamic_menu_logic() {
       var f = values[i];
       var r1 = f[c_r1] ? f[c_r1].toString().trim() : "";
       var r2 = f[c_r2] ? f[c_r2].toString().trim() : "";
-      
+
       if (r1 === rol_usuario || r2 === rol_usuario) {
         var sidebar_name = f[c_sb] ? f[c_sb].toString().trim() : "";
         var pestaña_name = f[c_ps] ? f[c_ps].toString().trim() : "";
@@ -89,7 +91,6 @@ function get_dynamic_menu_logic() {
       html_files: html_files,
       status: user.status
     };
-    
   } catch (e) {
     return { nombre: "Error", rol: "Invitado", menu: [], html_files: [] };
   }
