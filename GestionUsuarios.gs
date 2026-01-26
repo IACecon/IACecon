@@ -1,65 +1,111 @@
 /**
- * archivo: GestionUsuarios.gs bokana
+ * archivo: GestionUsuarios.gs
  */
+/**
+var GestionUsuarios = {
 
-function api_usuarios_get_interfaz(id_ss) {
-  try {
-    if (!id_ss) return null;
-    var ss = SpreadsheetApp.openById(id_ss);
-    var hoja = ss.getSheets()[0];
-    var data = hoja.getDataRange().getValues();
-    
-    var cleanData = data.map(function(row) {
-      return row.map(function(cell) {
-        if (cell instanceof Date) {
-          return Utilities.formatDate(cell, "GMT+1", "yyyy/MM/dd HH:mm:ss");
-        }
-        return cell;
-      });
-    });
+  obtener_interfaz: function(id_file) {
+    try {
+      var ss = SpreadsheetApp.openById(id_file);
+      var tz = ss.getSpreadsheetTimeZone();
+      var hoja = ss.getSheetByName("Usuarios");
+      if (!hoja) return { headers: [], rows: [], error: "No se encuentra la pestaña Usuarios" };
 
-    return {
-      headers: cleanData[0] || [],
-      rows: cleanData.length > 1 ? cleanData.slice(1) : [],
-      modulo_form: "GestionUsuarios_Form",
-      archivo_id: id_ss,
-      modulo: "GestionUsuarios",
-      config: {
-        buscador: true,
-        botones: [
-          { label: "Alta", class: "btn-alta", action: "ejecutar_accion_GestionUsuarios('alta')" },
-          { label: "Baja", class: "btn-baja", action: "ejecutar_accion_GestionUsuarios('baja')" },
-          { label: "Modificar", class: "btn-mod", action: "ejecutar_accion_GestionUsuarios('modificar')" }
-        ]
+      // --- LECTURA DE PARÁMETROS DESDE LA PESTAÑA 'Admin' ---
+      var idParams = "1V2G1x_64aLUcM4M4hSTBSwI7yFNKQS4vGecLWvv_jDY"; 
+      var ssParams = SpreadsheetApp.openById(idParams);
+      var hojaAdmin = ssParams.getSheetByName("Admin");
+      var valoresParams = hojaAdmin.getDataRange().getValues();
+      
+      var colorCorp = "#138275"; // Por si falla la lectura
+      var colorSel  = "#1bb09e"; // Por si falla la lectura
+      
+      for (var p = 0; p < valoresParams.length; p++) {
+        if (valoresParams[p][0] === "Color Corporativo") colorCorp = valoresParams[p][1];
+        if (valoresParams[p][0] === "Color Selección")   colorSel  = valoresParams[p][1];
       }
-    };
-  } catch(e) {
-    return { status: "error", msg: e.toString() };
-  }
-}
+      // -----------------------------------------------------
 
-function api_usuarios_ejecutar_accion(id_ss, accion, data) {
-  try {
-    var ss = SpreadsheetApp.openById(id_ss);
-    var hoja = ss.getSheets()[0];
-    var valores = hoja.getDataRange().getValues();
-    var ahora = Utilities.formatDate(new Date(), "GMT+1", "yyyy/MM/dd HH:mm:ss");
+      var data = hoja.getDataRange().getValues();
+      var headers = data[0];
+      var rows = [];
 
-    if (accion === "alta") {
-      hoja.appendRow([data.nombre, data.mail, data.tel, data.rol, ahora, "", data.restriccion, data.h_inicio, data.h_fin]);
-    } else if (accion === "modificar" || accion === "baja") {
-      for (var i = 1; i < valores.length; i++) {
-        if (valores[i][0] === data.nombre) {
-          if (accion === "modificar") {
-            hoja.getRange(i + 1, 2, 1, 3).setValues([[data.mail, data.tel, data.rol]]);
-            hoja.getRange(i + 1, 7, 1, 3).setValues([[data.restriccion, data.h_inicio, data.h_fin]]);
-          } else {
-            hoja.getRange(i + 1, 6).setValue(ahora);
+      for (var i = 1; i < data.length; i++) {
+        var fila = data[i].map(function(celda, index) {
+          if (celda instanceof Date) {
+            if (index === 5 || index === 6) {
+              return Utilities.formatDate(celda, tz, "yyyy/MM/dd HH:mm:ss");
+            }
+            // Horas puras: HH:mm
+            var hh = celda.getHours().toString().padStart(2, '0');
+            var mm = celda.getMinutes().toString().padStart(2, '0');
+            return hh + ":" + mm;
           }
-          break;
+          return celda;
+        });
+        rows.push(fila);
+      }
+
+      return {
+        headers: headers,
+        rows: rows,
+        modulo: "GestionUsuarios",
+        modulo_form: "GestionUsuarios_Form",
+        archivo_id: id_file,
+        config: {
+          color_corporativo: colorCorp,
+          color_seleccion: colorSel,
+          botones: [
+            { label: "Alta", action: "alta", class: "btn-alta" },
+            { label: "Modificar", action: "modificar", class: "btn-mod" },
+            { label: "Baja", action: "baja", class: "btn-baja" }
+          ]
+        }
+      };
+    } catch (e) {
+      return { headers: [], rows: [], error: e.toString() };
+    }
+  },
+
+  ejecutar_accion: function(metodo, params) {
+    try {
+      var id_file = params[0];
+      var accion  = params[1];
+      var data    = params[2];
+
+      var ss = SpreadsheetApp.openById(id_file);
+      var tz = ss.getSpreadsheetTimeZone();
+      var hoja = ss.getSheetByName("Usuarios");
+      
+      var ahora = Utilities.formatDate(new Date(), tz, "yyyy/MM/dd HH:mm:ss");
+      var h_ini_final = (data.restriccion === "No") ? "" : data.h_inicio;
+      var h_fin_final = (data.restriccion === "No") ? "" : data.h_fin;
+
+      if (accion === "alta") {
+        hoja.appendRow([data.nombre, data.apellidos, data.mail, data.tel, data.rol, ahora, "", data.restriccion, h_ini_final, h_fin_final]);
+      } 
+      else if (accion === "modificar") {
+        var valores = hoja.getDataRange().getValues();
+        for (var i = 1; i < valores.length; i++) {
+          if (valores[i][0] === data.nombre && valores[i][1] === data.apellidos) {
+            hoja.getRange(i + 1, 3, 1, 3).setValues([[data.mail, data.tel, data.rol]]);
+            hoja.getRange(i + 1, 8, 1, 3).setValues([[data.restriccion, h_ini_final, h_fin_final]]);
+            break;
+          }
+        }
+      } 
+      else if (accion === "baja") {
+        var valores = hoja.getDataRange().getValues();
+        for (var i = 1; i < valores.length; i++) {
+          if (valores[i][0] === data.nombre && valores[i][1] === data.apellidos) {
+            hoja.getRange(i + 1, 7).setValue(ahora);
+            break;
+          }
         }
       }
+      return { status: "ok" };
+    } catch (e) {
+      return { status: "error", error: e.toString() };
     }
-    return { status: "ok" };
-  } catch(e) { return { status: "error", error: e.toString() }; }
-}
+  }
+};*/

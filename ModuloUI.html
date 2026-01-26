@@ -1,157 +1,103 @@
 <script>
 /**
  * archivo: ModuloUI.html
- * última modificación: 2026/01/18 19:42:15
- * CAMBIOS REALIZADOS:
- * 1. SOLUCIÓN DEFINITIVA SELECCIÓN: Se usa base64 para inyectar el JSON en la línea 79 y evitar errores de comillas.
- * 2. TOGGLE FUNCIONAL: La función seleccionarFila permite activar y desactivar correctamente.
+ * Versión: v23.0 - Lógica Manual (Sin Frameworks)
  */
 
 window.menuCompleto = []; 
 
 function pintar_menu_principal(menu) {
-  const menuCont = document.getElementById('main-menu-container');
-  if (!menuCont || !menu) return;
+  const container = document.getElementById('main-menu-container');
+  if (!container || !menu) return;
   window.menuCompleto = menu; 
-  let htmlMenu = '';
+  
+  let html = '';
   menu.forEach((item, index) => {
-    htmlMenu += `<li><a href="#!" class="sidebar-link" id="side-${index}" onclick="seleccionarSidebar(this, '${item.titulo}')">${item.titulo}</a></li>`;
+    html += `<div class="sidebar-link" id="side-${index}" onclick="seleccionarSidebar(this, '${item.sidebar}')">${item.sidebar}</div>`;
   });
-  menuCont.innerHTML = htmlMenu;
+  container.innerHTML = html;
+  
+  // Seleccionar el primero por defecto
   const primerEnlace = document.getElementById('side-0');
-  if (primerEnlace) seleccionarSidebar(primerEnlace, menu[0].titulo);
+  if (primerEnlace) seleccionarSidebar(primerEnlace, menu[0].sidebar);
 }
 
 function seleccionarSidebar(elemento, titulo) {
-  document.querySelectorAll('.sidebar-link').forEach(a => a.classList.remove('active-menu'));
+  // Resetear estados activos
+  document.querySelectorAll('.sidebar-link').forEach(el => el.classList.remove('active-menu'));
   elemento.classList.add('active-menu');
-  const info = window.menuCompleto.find(m => m.titulo === titulo);
+  
+  const info = window.menuCompleto.find(m => m.sidebar === titulo);
   if (info) {
     if (info.pestanas && info.pestanas.length > 0) {
       pintar_tabs(info.pestanas);
-      cargarSeccion(info.pestanas[0]);
     } else {
-      const tabCont = document.getElementById('sub-menu-tabs');
-      if (tabCont) tabCont.innerHTML = '';
+      document.getElementById('sub-menu-tabs').innerHTML = '';
       cargarSeccion(titulo);
     }
   }
 }
 
-function pintar_tabs(lista, tabActiva) {
-  const tabCont = document.getElementById('sub-menu-tabs');
-  if (!tabCont) return;
-  let htmlTabs = '';
+function pintar_tabs(lista) {
+  const container = document.getElementById('sub-menu-tabs');
+  if (!container) return;
+  
+  let html = '';
   lista.forEach((p, index) => {
-    const clase = (tabActiva && p === tabActiva) || (!tabActiva && index === 0) ? 'active' : '';
-    htmlTabs += `<li class="tab"><a class="${clase}" onclick="marcarTabActiva(this); cargarSeccion('${p}')">${p}</a></li>`;
+    const clase = index === 0 ? 'active-tab' : '';
+    html += `<li class="${clase}" onclick="seleccionarTab(this, '${p}')">${p}</li>`;
   });
-  tabCont.innerHTML = htmlTabs;
-  if (typeof M !== 'undefined') M.Tabs.init(tabCont);
+  container.innerHTML = html;
+  cargarSeccion(lista[0]);
 }
 
-function marcarTabActiva(elemento) {
-  elemento.closest('.tabs').querySelectorAll('a').forEach(a => a.classList.remove('active'));
-  elemento.classList.add('active');
+function seleccionarTab(elemento, nombre) {
+  document.querySelectorAll('#sub-menu-tabs li').forEach(li => li.classList.remove('active-tab'));
+  elemento.classList.add('active-tab');
+  cargarSeccion(nombre);
 }
 
 function pintar_contenido(res) {
   const contenedor = document.getElementById('dynamic-content');
   if (!contenedor || !res) return;
 
-  window.currentData.archivo_id = res.archivo_id || "";
-  window.currentData.modulo = res.modulo || "";
-
-  let html = '';
-  if (res.config && res.config.botones) {
-    html += `<div class="header-actions">`;
-    html += `<div class="search-container"><input type="text" id="buscador-global" onkeyup="filtrarListadoUniversal()" placeholder="Buscar en listado..."></div>`;
-    html += `<div class="botones-container">`;
-    res.config.botones.forEach(btn => {
-      html += `<button class="btn-redondo ${btn.class}" onclick="ejecutarAccionModulo('${btn.action}')">${btn.label}</button>`;
-    });
-    html += `</div></div>`;
+  // CASO: DESARROLLO / ERROR (Mensaje visual en pantalla)
+  if (res.tipo === "desarrollo" || res.tipo === "error_vinculacion") {
+    const d = res.debug || {};
+    contenedor.innerHTML = `
+      <div style="border: 2px solid var(--color-principal); padding: 20px; border-radius: 8px;">
+        <h3 style="color: var(--color-principal); margin-top:0;"><i class="material-icons" style="vertical-align: middle;">construction</i> ${res.mensaje}</h3>
+        <p><b>Fila Auditada:</b> ${d.fila || '?'}</p>
+        <hr>
+        <p><b>Col E (ID):</b> ${d.e || 'Vacío'}</p>
+        <p><b>Col F (GS):</b> ${d.f || 'Vacío'}</p>
+        <p><b>Col G (HTML):</b> ${d.g || 'Vacío'}</p>
+        <p style="color: red; margin-top: 20px;"><b>Nota:</b> ${res.tipo === "error_vinculacion" ? "El código GS no responde." : "Parámetros incompletos."}</p>
+      </div>`;
+    return;
   }
 
-  html += `<div class="table-container">`;
-  html += `<table class="resizable-table striped" id="tabla-datos-principal">`;
-  html += `<thead><tr>`;
+  // CASO: ÉXITO (Tabla)
   if (res.headers) {
-    res.headers.forEach((h, index) => {
-      html += `<th onclick="ordenarTabla(${index})">
-                <div class="th-content">
-                  <span>${h}</span>
-                  <span class="sort-icon">↕</span>
-                </div>
-                <div class="resizer"></div>
-              </th>`;
-    });
-  }
-  html += `</tr></thead><tbody>`;
-  if (res.rows) {
+    let html = '<table><thead><tr>';
+    res.headers.forEach(h => html += `<th>${h}</th>`);
+    html += '</tr></thead><tbody>';
     res.rows.forEach(row => {
-      // Usamos btoa para evitar cualquier problema de comillas en el onclick
-      const dataEncoded = btoa(unescape(encodeURIComponent(JSON.stringify(row))));
-      html += `<tr onclick="seleccionarFila(this, '${dataEncoded}')">`;
-      row.forEach(cell => { html += `<td>${cell || ''}</td>`; });
-      html += `</tr>`;
+      html += '<tr>';
+      row.forEach(cell => html += `<td>${cell || ''}</td>`);
+      html += '</tr>';
     });
-  }
-  html += `</tbody></table></div>`;
-  contenedor.innerHTML = html;
-
-  setTimeout(() => { if (typeof initResizable === 'function') initResizable('tabla-datos-principal'); }, 300);
-}
-
-function seleccionarFila(fila, dataEncoded) {
-  const dataArray = JSON.parse(decodeURIComponent(escape(atob(dataEncoded))));
-  const estabaSeleccionada = fila.classList.contains('selected-row');
-  
-  // Limpiar todas
-  const trs = fila.parentNode.querySelectorAll('tr');
-  trs.forEach(tr => tr.classList.remove('selected-row'));
-  
-  if (!estabaSeleccionada) {
-    fila.classList.add('selected-row');
-    window.selectedRowData = dataArray;
-    registrarLog("fila_seleccionada", "tabla", dataArray);
-  } else {
-    window.selectedRowData = null;
-    registrarLog("fila_deseleccionada", "tabla", null);
+    html += '</tbody></table>';
+    contenedor.innerHTML = html;
   }
 }
 
-function initResizable(tableId) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const ths = table.querySelectorAll('th');
-  table.style.tableLayout = 'auto'; table.style.width = 'auto';
-
-  ths.forEach(th => {
-    const resizer = th.querySelector('.resizer');
-    if (!resizer) return;
-    resizer.addEventListener('mousedown', function(e) {
-      e.stopPropagation(); e.preventDefault();
-      const startX = e.pageX; const startWidth = th.offsetWidth;
-      const tableStartWidth = table.offsetWidth;
-      const content = th.querySelector('.th-content');
-      const minWidth = content ? content.scrollWidth + 10 : 60;
-
-      ths.forEach(h => h.style.width = h.offsetWidth + 'px');
-      table.style.width = tableStartWidth + 'px';
-      table.style.tableLayout = 'fixed';
-
-      function onMouseMove(moveEvent) {
-        const currentWidth = startWidth + (moveEvent.pageX - startX);
-        if (currentWidth >= minWidth) th.style.width = currentWidth + 'px';
-      }
-      function onMouseUp() {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
-      }
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
-    });
-  });
+function cargarSeccion(nombre) {
+  const content = document.getElementById('dynamic-content');
+  if (content) content.innerHTML = 'Cargando...';
+  
+  google.script.run
+    .withSuccessHandler(pintar_contenido)
+    .get_data_tabla_generica(nombre);
 }
 </script>

@@ -1,0 +1,112 @@
+<div id="modal-fichaje" class="modal">
+  <div class="modal-content">
+    <h5 id="fichaje-titulo" class="blue-text text-darken-4" style="font-weight: 500;">Confirmar Registro</h5>
+    <div class="divider"></div>
+    
+    <div style="margin-top: 25px;">
+      <p id="fichaje-mensaje" style="font-size: 1.2rem;"></p>
+    </div>
+
+    <input type="hidden" id="fichaje-nombre">
+    <input type="hidden" id="fichaje-tipo">
+
+    <div class="input-field" style="margin-top: 30px;">
+      <i class="material-icons prefix">chat_bubble_outline</i>
+      <textarea id="fichaje-obs" class="materialize-textarea"></textarea>
+      <label for="fichaje-obs">Observaciones (Opcional)</label>
+    </div>
+  </div>
+  
+  <div class="modal-footer" style="padding-right: 24px; padding-bottom: 20px;">
+    <a href="#!" class="modal-close waves-effect waves-red btn-flat" style="margin-right: 10px;">Cancelar</a>
+    <button class="waves-effect waves-light btn blue darken-3" onclick="confirmarAccionServicio()">
+      <i class="material-icons left">check</i>Confirmar
+    </button>
+  </div>
+</div>
+
+<script>
+/**
+ * Lógica particular del módulo de Servicios.
+ * Se ejecuta al cargarse la sección "Servicios".
+ */
+(function() {
+  // 1. Inicializar el modal de Materialize
+  const modalElem = document.querySelector('#modal-fichaje');
+  const instance = M.Modal.init(modalElem, {
+    dismissible: true
+  });
+
+  /**
+   * Configura el listener de Doble Click sobre la tabla.
+   * ModuloUI genera la tabla con ID 'tabla-datos-cuerpo'.
+   */
+  function configurarDobleClick() {
+    const tablaCuerpo = document.querySelector('#tabla-datos-cuerpo');
+    
+    if (!tablaCuerpo) {
+      // Si la tabla aún no se ha renderizado, reintentamos en 200ms
+      setTimeout(configurarDobleClick, 200);
+      return;
+    }
+
+    tablaCuerpo.addEventListener('dblclick', function(e) {
+      const fila = e.target.closest('tr');
+      if (!fila) return;
+
+      // Extraer datos de la fila (basado en el orden de RegistroServicios.gs)
+      // 0: Nombre, 1: Estado Actual
+      const nombre = fila.cells[0].innerText;
+      const estadoActual = fila.cells[1].innerText;
+
+      abrirCuadroConfirmacion(nombre, estadoActual);
+    });
+    
+    console.log("Evento Doble Click vinculado a la tabla de Servicios");
+  }
+
+  function abrirCuadroConfirmacion(nombre, estadoActual) {
+    // Definir la acción opuesta al estado actual
+    const proximaAccion = (estadoActual === "Inicio") ? "Fin" : "Inicio";
+    
+    // Rellenar el modal
+    document.getElementById('fichaje-titulo').innerText = "Registrar " + proximaAccion;
+    document.getElementById('fichaje-mensaje').innerHTML = `¿Desea registrar el <b>${proximaAccion}</b> de servicio para <b>${nombre}</b>?`;
+    document.getElementById('fichaje-nombre').value = nombre;
+    document.getElementById('fichaje-tipo').value = proximaAccion;
+    document.getElementById('fichaje-obs').value = "";
+
+    M.updateTextFields();
+    M.textareaAutoResize(document.getElementById('fichaje-obs'));
+    instance.open();
+  }
+
+  // Hacer la función de confirmación accesible globalmente para el botón del modal
+  window.confirmarAccionServicio = function() {
+    const params = {
+      nombre: document.getElementById('fichaje-nombre').value,
+      tipo_registro: document.getElementById('fichaje-tipo').value,
+      observaciones: document.getElementById('fichaje-obs').value,
+      archivo_id: data_temp ? data_temp.archivo_id : "" // Usamos el ID recuperado por Main.gs
+    };
+
+    M.toast({html: 'Registrando acción...'});
+
+    google.script.run
+      .withSuccessHandler(function(res) {
+        if (res.status === 'ok') {
+          M.toast({html: 'Registro completado con éxito', classes: 'green'});
+          instance.close();
+          // Refrescamos la sección usando la función global de Scripts.html
+          cargarSeccion("Servicios"); 
+        } else {
+          M.toast({html: 'Error: ' + res.mensaje, classes: 'red'});
+        }
+      })
+      .router_modulo("RegistroServicios", "registrar_fichaje", params);
+  };
+
+  // Iniciar la escucha del doble clic
+  configurarDobleClick();
+})();
+</script>
