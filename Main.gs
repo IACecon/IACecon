@@ -1,6 +1,6 @@
 /**
  * archivo: Main.gs
- * Versión: v28.43 - Diferenciación de estados de desarrollo
+ * Versión: v28.44 - RESPETANDO CARGA BAJO DEMANDA Y CRITERIO DE MEMORIA
  */
 
 const ID_SS_PARAMETROS = '1V2G1x_64aLUcM4M4hSTBSwI7yFNKQS4vGecLWvv_jDY';
@@ -73,51 +73,42 @@ function get_data_tabla_generica(seccion) {
         var gs_val   = row[5] ? row[5].toString().trim() : ""; 
         var html_val = row[6] ? row[6].toString().trim() : ""; 
         
+        // CRITERIO PROFESIONAL: Si no hay archivos definidos, es desarrollo.
+        if (!gs_val || !html_val) {
+          return { 
+            tipo: "desarrollo", 
+            mensaje: "Módulo sin definir en Funcionalidades", 
+            seccion: busca,
+            pestañas: listaPestanas,
+            debug: { fila: (i + 1), e: "N/A", f: "N/A", g: "N/A", nota: "Faltan archivos GS/HTML" }
+          };
+        }
+
+        // Si hay archivos, INTENTAMOS la carga modular. 
+        // No comprobamos globalThis antes para no romper la carga bajo demanda.
         var nombreModulo = gs_val.replace('.gs', '').trim();
         var moduloHandler = globalThis[nombreModulo];
 
-        // CASO 1: El módulo tiene archivos asignados pero no tiene lógica 'obtener_interfaz'
-        if (gs_val !== "" && html_val !== "") {
-          if (moduloHandler && typeof moduloHandler.obtener_interfaz === "function") {
-            var res = moduloHandler.obtener_interfaz(extraer_id_url(id_val), busca);
-            return { 
-              ...res, 
-              seccion: busca,
-              pestañas: listaPestanas,
-              modulo_form: html_val, 
-              tipo: "datos_modulares"
-            };
-          } else {
-            return { 
-              tipo: "desarrollo", 
-              mensaje: "Lógica Modular no implementada", 
-              seccion: busca,
-              pestañas: listaPestanas,
-              debug: { 
-                fila: (i + 1),
-                e: id_val,
-                f: gs_val,
-                g: html_val,
-                nota: "Los archivos existen pero el .gs no tiene la función obtener_interfaz"
-              }
-            };
-          }
-        } 
-        
-        // CASO 2: El módulo no tiene ni siquiera archivos asignados en la hoja de cálculo
-        return { 
-          tipo: "desarrollo", 
-          mensaje: "Módulo sin definir en Funcionalidades", 
-          seccion: busca,
-          pestañas: listaPestanas,
-          debug: { 
-            fila: (i + 1),
-            e: "N/A",
-            f: "N/A",
-            g: "N/A",
-            nota: "Faltan parámetros básicos en las columnas E, F y G"
-          }
-        };
+        if (moduloHandler && typeof moduloHandler.obtener_interfaz === "function") {
+          var res = moduloHandler.obtener_interfaz(extraer_id_url(id_val), busca);
+          return { 
+            ...res, 
+            seccion: busca,
+            pestañas: listaPestanas,
+            modulo_form: html_val, 
+            tipo: "datos_modulares"
+          };
+        } else {
+          // Si llegamos aquí es porque el archivo está declarado pero su código 
+          // está comentado o no tiene el objeto Namespace activo.
+          return { 
+            tipo: "desarrollo", 
+            mensaje: "Lógica Modular no disponible (Comentada o inexistente)", 
+            seccion: busca,
+            pestañas: listaPestanas,
+            debug: { fila: (i + 1), e: id_val, f: gs_val, g: html_val, nota: "El código no responde. Verifique si el .gs está comentado." }
+          };
+        }
       }
     }
     return { tipo: "error", mensaje: "Sección no encontrada", pestañas: [] };
