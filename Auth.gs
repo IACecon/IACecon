@@ -1,5 +1,5 @@
 /**
- * archivo: Auth.gs
+ * archivo: Auth.gs lolo
  * Versión v14 - Sincronización de Identidad y Menú
  * Fecha: 2026/01/25 23:25:00
  */
