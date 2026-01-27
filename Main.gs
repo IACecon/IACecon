@@ -1,5 +1,5 @@
 /**
- * archivo: Main.gs
+ * archivo: Main.gs lolo
  * Versión: v30.22 - Corrección de duplicidad en Sesiones
  */
 
