@@ -1,6 +1,6 @@
 /**
  * archivo: Main.gs
- * Versión: v30.12 - CONTROL DE LOG (Interruptor B4)
+ * Versión: v30.13 - CONTROL DE LOG EVOLUCIONADO (0 = Producción)
  */
 
 var ID_SS_PARAMETROS = "1V2G1x_64aLUcM4M4hSTBSwI7yFNKQS4vGecLWvv_jDY";
@@ -31,22 +31,21 @@ function get_system_params() {
 
 /**
  * FUNCIÓN DE LOG INTELIGENTE
- * Solo ejecuta el registro si el parámetro "Log" es igual a 1.
+ * 0 = Producción (Nada se muestra)
+ * Distinto de 0 = Trazabilidad total
  */
 function registrar_log(mensaje, origen) {
   var params = get_system_params();
-  
-  // Si el valor en B4 (Log) es 0, salimos sin hacer nada (Modo Producción)
-  if (params["Log"] != 1) return;
+  var nivelLog = params["Log"];
+
+  // Si el valor es 0, salimos sin hacer nada (Modo Producción)
+  if (nivelLog == 0) return;
 
   try {
     var fecha = Utilities.formatDate(new Date(), "GMT+1", "yyyy/MM/dd HH:mm:ss");
     var logMensaje = "[" + fecha + "] [" + (origen || "Sistema") + "] " + mensaje;
     
-    // Aquí puedes decidir dónde guardarlo: console.log, una hoja de Logs, etc.
-    console.log(logMensaje); 
-    
-    // Si quieres que el frontend también lo reciba, podrías retornarlo aquí.
+    console.log(logMensaje);
     return logMensaje;
   } catch (e) {
     // Fallback silencioso en caso de error en el propio log
@@ -58,7 +57,6 @@ function get_user_data() {
   var params = get_system_params();
   
   registrar_log("Usuario identificado: " + auth.user, "Auth");
-  
   return { nombre: auth.user, rol: auth.rol, menu: auth.menu, system_params: params };
 }
 
@@ -68,7 +66,6 @@ function doGet(e) {
   template.CONFIG = params;
   
   registrar_log("Acceso a la aplicación detectado", "doGet");
-  
   return template.evaluate()
       .setTitle(params["Nombre Aplicacion"] || "Sistema")
       .addMetaTag('viewport', 'width=device-width, initial-scale=1')
@@ -92,9 +89,9 @@ function buscar_configuracion_funcionalidad(nombre, rolUsuario) {
     var row = data[i];
     var rol1DB = row[2] ? row[2].toString().toLowerCase().trim() : "";
     var rol2DB = row[3] ? row[3].toString().toLowerCase().trim() : "";
-    
+
     if (rol1DB !== rolUserComp && rol2DB !== rolUserComp && rol1DB !== "todos") continue;
-    
+
     if (row[0].toString().trim() === busca || row[1].toString().trim() === busca) {
       return {
         fila: i + 1,
@@ -112,7 +109,7 @@ function get_data_tabla_generica(seccion) {
   try {
     var auth = get_dynamic_menu_logic();
     var config = buscar_configuracion_funcionalidad(seccion, auth.rol);
-    
+
     if (!config) {
       registrar_log("Acceso denegado o sección no encontrada: " + seccion, "Router");
       return { tipo: "error", mensaje: "Sección no encontrada o sin permisos." };
@@ -133,7 +130,8 @@ function get_data_tabla_generica(seccion) {
           fila: config.fila,
           nota: !modulo ? "Script no cargado" : "Faltan parámetros"
         },
-        pestanas: auth.menu.find(m => m.sidebar === config.sidebar) ? auth.menu.find(m => m.sidebar === config.sidebar).pestanas : []
+        pestanas: auth.menu.find(m => m.sidebar === config.sidebar) ? 
+                  auth.menu.find(m => m.sidebar === config.sidebar).pestanas : []
       };
     }
 

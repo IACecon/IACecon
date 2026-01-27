@@ -32,7 +32,7 @@
 
     <div id="dynamic-content"></div>
 
-    <section id="log-container">
+    <section id="log-container" style="display: <?= (CONFIG.Log == 0) ? 'none' : 'block' ?>;">
       <div class="log-header">
         <span>registro de sistema (debug)</span>
         <button onclick="limpiarLog()">limpiar</button>

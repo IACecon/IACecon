@@ -1,10 +1,9 @@
 <script>
 /**
  * ARCHIVO: Scripts.html 
- * ÚLTIMA MODIFICACIÓN: 2026/01/18 17:15:00
+ * ÚLTIMA MODIFICACIÓN: 2026/01/27 12:20:00
  * COMENTARIOS:
- * 1. ELIMINADA: función initResizable (duplicidad con ModuloUI.html).
- * 2. MANTENIDAS: Lógica de carga de secciones, ordenación y logs.
+ * 1. Implementación de control de log basado en el parámetro Log de Admin (0 = Producción).
  */
 
 window.selectedRowData = null;
@@ -41,6 +40,10 @@ function cargarSeccion(nombre) {
 }
 
 function registrarLog(evento, pestana, valores) {
+  // LÓGICA DE CONTROL DE LOG: 0 = Producción (No se muestra nada)
+  // El valor se inyecta desde el servidor mediante la evaluación de la plantilla
+  if (parseInt("<?= CONFIG.Log ?>") === 0) return;
+
   const logCont = document.getElementById('debug-log');
   if (!logCont) return;
   const ahora = new Date();
