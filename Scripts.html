@@ -1,9 +1,7 @@
 <script>
 /**
  * ARCHIVO: Scripts.html 
- * ÚLTIMA MODIFICACIÓN: 2026/01/27 12:20:00
- * COMENTARIOS:
- * 1. Implementación de control de log basado en el parámetro Log de Admin (0 = Producción).
+ * Versión: v30.21 - Redirección a URL Invitado
  */
 
 window.selectedRowData = null;
@@ -20,16 +18,25 @@ window.onload = function() {
       }
     })
     .get_user_data();
-  const spinner = document.getElementById('loading-spinner');
-  if (spinner) spinner.style.display = 'none';
 };
 
+function solicitarCierreSesion() {
+  const btn = document.getElementById('btn-estado-sesion');
+  if (btn) btn.style.opacity = "0.5";
+
+  google.script.run
+    .withSuccessHandler(function(urlDestino) {
+      window.top.location.href = urlDestino;
+    })
+    .withFailureHandler(function(err) {
+      window.top.location.href = "<?= CONFIG.Homeurl ?>";
+    })
+    .ejecutar_cierre_sesion();
+}
+
 function cargarSeccion(nombre) {
-  const spinner = document.getElementById('loading-spinner');
-  if (spinner) spinner.style.display = 'block';
   google.script.run
     .withSuccessHandler(res => {
-      if (spinner) spinner.style.display = 'none';
       if (!res) return;
       window.currentData.archivo_id = res.archivo_id || "";
       window.currentData.modulo = res.modulo || "";
@@ -40,15 +47,11 @@ function cargarSeccion(nombre) {
 }
 
 function registrarLog(evento, pestana, valores) {
-  // LÓGICA DE CONTROL DE LOG: 0 = Producción (No se muestra nada)
-  // El valor se inyecta desde el servidor mediante la evaluación de la plantilla
   if (parseInt("<?= CONFIG.Log ?>") === 0) return;
-
   const logCont = document.getElementById('debug-log');
   if (!logCont) return;
   const ahora = new Date();
   const f = ahora.getFullYear() + '/' + String(ahora.getMonth() + 1).padStart(2, '0') + '/' + String(ahora.getDate()).padStart(2, '0') + ' ' + String(ahora.getHours()).padStart(2, '0') + ':' + String(ahora.getMinutes()).padStart(2, '0') + ':' + String(ahora.getSeconds()).padStart(2, '0');
-  
   const logItem = document.createElement('div');
   logItem.style.borderBottom = "1px solid #444";
   logItem.style.padding = "2px 0";
@@ -59,44 +62,5 @@ function registrarLog(evento, pestana, valores) {
 function limpiarLog() {
   const logCont = document.getElementById('debug-log');
   if (logCont) logCont.innerHTML = '';
-}
-
-function ordenarTabla(n) {
-  const tabla = document.getElementById("tabla-datos-principal");
-  if (!tabla) return;
-  let filas, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-  switching = true; dir = "asc"; 
-  while (switching) {
-    switching = false; filas = tabla.rows;
-    for (i = 1; i < (filas.length - 1); i++) {
-      shouldSwitch = false;
-      x = filas[i].getElementsByTagName("TD")[n];
-      y = filas[i + 1].getElementsByTagName("TD")[n];
-      if (dir == "asc" && x.innerHTML.toLowerCase() > y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-      if (dir == "desc" && x.innerHTML.toLowerCase() < y.innerHTML.toLowerCase()) { shouldSwitch = true; break; }
-    }
-    if (shouldSwitch) { filas[i].parentNode.insertBefore(filas[i + 1], filas[i]); switching = true; switchcount ++; }
-    else if (switchcount == 0 && dir == "asc") { dir = "desc"; switching = true; }
-  }
-}
-
-function ejecutarAccionModulo(accionRaw) {
-  try {
-    const partes = accionRaw.split('(');
-    const nombreFunc = partes[0].trim();
-    const param = partes[1] ? partes[1].split("'")[1] : null;
-    if (typeof window[nombreFunc] === 'function') window[nombreFunc](param);
-  } catch (e) { registrarLog("error_ejecucion", "js", e.message); }
-}
-
-function filtrarListadoUniversal() {
-  const input = document.getElementById('buscador-global');
-  const tabla = document.getElementById('tabla-datos-principal');
-  if (!input || !tabla) return;
-  const filter = input.value.toLowerCase();
-  const filas = tabla.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-  for (let i = 0; i < filas.length; i++) {
-    filas[i].style.display = filas[i].innerText.toLowerCase().includes(filter) ? "" : "none";
-  }
 }
 </script>
